@@ -6,6 +6,7 @@ const ARROW_KEYS = new Set(["ARROWLEFT", "ARROWRIGHT", "ARROWUP", "ARROWDOWN"]);
 const DELETE_KEYS = new Set(["BACKSPACE", "DELETE"])
 const ROWS = 10;
 const COLS = 15;
+const BENCH_SIZE = 15
 const EMPTY_TILE = " "
 
 const LETTER_DISTRIBUTION = {
@@ -22,7 +23,7 @@ const LETTER_DISTRIBUTION = {
 	18: "E",
 };
 const LETTER_POOL = Object.keys(LETTER_DISTRIBUTION).flatMap((count) => {
-	const intCount: keyof typeof LETTER_DISTRIBUTION = Number.parseInt(count);
+	const intCount = Number.parseInt(count);
 	let letters: string[] = [];
 	for (const char of LETTER_DISTRIBUTION[intCount]) {
 		letters = letters.concat(Array(intCount).fill(char));
@@ -52,7 +53,7 @@ export default function Game() {
 
 	useEffect(() => {
 		// TODO: Note, this random choice allows for duplicate draws.
-		setBench(LETTER_POOL.toSorted(() => 0.5 - Math.random()).slice(0, 10));
+		setBench(LETTER_POOL.toSorted(() => 0.5 - Math.random()).slice(0, BENCH_SIZE));
 		document.body.style.overflow = "hidden"
 	}, []);
 
