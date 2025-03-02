@@ -1,101 +1,199 @@
-import Image from "next/image";
+"use client";
+import { KeyboardEventHandler, useEffect, useState } from "react";
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+const IS_LETTER = /^[a-zA-Z]+$/;
+const ARROW_KEYS = new Set(["ARROWLEFT", "ARROWRIGHT", "ARROWUP", "ARROWDOWN"]);
+const DELETE_KEYS = new Set(["BACKSPACE", "DELETE"])
+const ROWS = 10;
+const COLS = 15;
+const EMPTY_TILE = " "
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+const LETTER_DISTRIBUTION = {
+	2: "JKQXZ",
+	3: "BCFHMPVWY",
+	4: "G",
+	5: "L",
+	6: "DSU",
+	8: "N",
+	9: "TR",
+	11: "O",
+	12: "I",
+	13: "A",
+	18: "E",
+};
+const LETTER_POOL = Object.keys(LETTER_DISTRIBUTION).flatMap((count) => {
+	const intCount: keyof typeof LETTER_DISTRIBUTION = Number.parseInt(count);
+	let letters: string[] = [];
+	for (const char of LETTER_DISTRIBUTION[intCount]) {
+		letters = letters.concat(Array(intCount).fill(char));
+	}
+	return letters;
+});
+
+interface Props {
+	row: number;
+	col: number;
+	letter: string;
+}
+
+enum Direction {
+	Vertical = "Vertical",
+	Horizontal = "Horizontal"
+}
+
+export default function Game() {
+	const [grid, setGrid] = useState(
+		Array<string[]>(ROWS).fill(Array(COLS).fill(EMPTY_TILE)),
+	);
+
+	const [bench, setBench] = useState<string[]>([]);
+	const [selectedTile, setSelectedTile] = useState([-1, -1]);
+	const [editDirection, setEditDirection] = useState(Direction.Horizontal)
+
+	useEffect(() => {
+		// TODO: Note, this random choice allows for duplicate draws.
+		setBench(LETTER_POOL.toSorted(() => 0.5 - Math.random()).slice(0, 10));
+		document.body.style.overflow = "hidden"
+	}, []);
+
+	useEffect(() => {
+		// TODO: Add dictionary verification
+
+		function handleKeyDown(event: KeyboardEvent) {
+			const keyPressed = event.key.toUpperCase();
+			const [row, col] = selectedTile;
+
+			console.debug(`Key pressed: ${keyPressed}`);
+
+			if (
+				row >= 0 &&
+				col >= 0 &&
+				IS_LETTER.test(keyPressed) &&
+				bench.includes(keyPressed)
+			) {
+				// Make copies to prevent undesired behavior
+				const newGrid = [...grid];
+				const newRow = [...newGrid[row]];
+				newRow[col] = keyPressed;
+				newGrid[row] = newRow;
+				setGrid(newGrid);
+
+				const newBench = [...bench];
+				const letter = grid[row][col];
+				if (IS_LETTER.test(letter)) {
+					newBench[newBench.indexOf(keyPressed)] = letter;
+				} else {
+					newBench.splice(newBench.indexOf(keyPressed), 1);
+				}
+				setBench(newBench);
+			} else if (ARROW_KEYS.has(keyPressed)) {
+				const newSelectedTile = [...selectedTile];
+
+				switch (keyPressed) {
+					case "ARROWUP":
+						newSelectedTile[0] -= 1;
+						break;
+					case "ARROWDOWN":
+						newSelectedTile[0] += 1;
+						break;
+					case "ARROWLEFT":
+						newSelectedTile[1] -= 1;
+						break;
+					case "ARROWRIGHT":
+						newSelectedTile[1] += 1;
+						break;
+					default:
+						break;
+				}
+
+				if (
+					0 <= newSelectedTile[0] &&
+					newSelectedTile[0] < ROWS &&
+					0 <= newSelectedTile[1] &&
+					newSelectedTile[1] < COLS
+				) {
+					setSelectedTile(newSelectedTile);
+				}
+			} else if (DELETE_KEYS.has(keyPressed) && IS_LETTER.test(grid[row][col])) {
+				const newBench = [...bench, grid[row][col]]
+				setBench(newBench)
+
+				const newGrid = [...grid];
+				const newRow = [...newGrid[row]];
+				newRow[col] = EMPTY_TILE;
+				newGrid[row] = newRow;
+				setGrid(newGrid);
+			}
+		}
+
+		document.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [grid, bench, selectedTile]);
+
+	function Tile({ row, col, letter }: Props) {
+		const isSelected = selectedTile[0] === row && selectedTile[1] === col;
+		const hasLetter = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(letter);
+		const bg = isSelected ? "bg-yellow-400" : hasLetter ? "bg-yellow-100" : "";
+
+		// TODO: useRef to blue upon unselect
+		return (
+			<button
+				type="button"
+				className={`p-4 ${bg} text-amber-950 font-bold rounded-md text-4xl w-16 h-16`}
+				onClick={() => setSelectedTile([row, col])}
+			>
+				{letter}
+			</button>
+		);
+	}
+
+	return (
+		<div>
+			<div className="w-full place-items-center mb-10 text-center">
+				<div className="grid auto-cols-max grid-flow-col gap-2 mb-2">
+					{bench.map((letter, index) => (
+						<div key={index} className="p-4 bg-yellow-100 text-amber-950 font-bold rounded-md text-4xl w-16 h-16">
+							{letter}
+						</div>
+					))}
+				</div>
+				<span className="font-bold">Bench</span>
+			</div>
+
+			<div className="w-full place-items-center mb-4">
+				<div>
+
+				<b>Use mouse to select tiles and keyboard to interact:</b>
+				<ul className="list-disc list-inside">
+					<li>Type letters to use letters from bench</li>
+					<li>Arrow keys to move selected tile</li>
+					<li>Backspace/delete to clear selected tile</li>
+					<li>WIP: Spacebar to control edit direction (horizontal/vertical)</li>
+					<li>WIP: Enter to peel/verify board words</li>
+				</ul>
+				</div>
+			</div>
+
+			<div className="w-full place-items-center">
+				<div className={`grid grid-rows-${ROWS} divide-y-3 divide-gray-500 `}>
+					{grid.map((row, row_index) => (
+						<div
+							key={row_index}
+							className={`grid auto-cols-max grid-flow-col divide-x-3 divide-gray-500`}
+							// ${(selectedTile[0] === row_index && editDirection === Direction.Horizontal) && "bg-slate-500 bg-opacity-10"}
+						>
+							{row.map((col, col_index) => (
+								<div key={`${row_index}_${col_index}`} className={``}>
+									<Tile row={row_index} col={col_index} letter={col} />
+								</div>
+							))}
+						</div>
+					))}
+				</div>
+			</div>
+		</div>
+	);
 }
