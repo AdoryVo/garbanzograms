@@ -1,13 +1,16 @@
 "use client";
-import { KeyboardEventHandler, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+
+import { cn } from "@/lib/utils";
+import WORD_LIST from "@/NWL2023_processed.json"
 
 const IS_LETTER = /^[a-zA-Z]+$/;
 const ARROW_KEYS = new Set(["ARROWLEFT", "ARROWRIGHT", "ARROWUP", "ARROWDOWN"]);
-const DELETE_KEYS = new Set(["BACKSPACE", "DELETE"])
-const ROWS = 10;
+const DELETE_KEYS = new Set(["BACKSPACE", "DELETE"]);
+const ROWS = 9;
 const COLS = 15;
-const BENCH_SIZE = 15
-const EMPTY_TILE = " "
+const BENCH_SIZE = 15;
+const EMPTY_TILE = " ";
 
 const LETTER_DISTRIBUTION = {
 	2: "JKQXZ",
@@ -39,7 +42,7 @@ interface Props {
 
 enum Direction {
 	Vertical = "Vertical",
-	Horizontal = "Horizontal"
+	Horizontal = "Horizontal",
 }
 
 export default function Game() {
@@ -49,35 +52,67 @@ export default function Game() {
 
 	const [bench, setBench] = useState<string[]>([]);
 	const [selectedTile, setSelectedTile] = useState([-1, -1]);
-	const [editDirection, setEditDirection] = useState(Direction.Horizontal)
+	const [editDirection, setEditDirection] = useState(Direction.Horizontal);
+	const [board_verification, setBoardVerification] = useState<string[]>([]);
 
 	useEffect(() => {
-		// TODO: Note, this random choice allows for duplicate draws.
-		setBench(LETTER_POOL.toSorted(() => 0.5 - Math.random()).slice(0, BENCH_SIZE));
-		document.body.style.overflow = "hidden"
+		setBench(
+			LETTER_POOL.toSorted(() => 0.5 - Math.random()).slice(0, BENCH_SIZE),
+		);
 	}, []);
 
 	useEffect(() => {
-		// TODO: Add dictionary verification
+		const board_words = []
+		for (const row of grid) {
+			const row_string = row.join("")
+			const row_words = row_string.split(EMPTY_TILE).filter((word) => word.length > 1)
 
+			for (const word of row_words) {
+				if (word in WORD_LIST) {
+					board_words.push(`${word}: ${WORD_LIST[word]}`)
+				} else {
+					board_words.push(`${word} is not a valid word!`)
+				}
+			}
+		}
+
+		for (let col_index = 0; col_index < grid[0].length; col_index++) {
+			const col = grid.map((row) => row[col_index])
+			const col_string = col.join("")
+			const col_words = col_string.split(EMPTY_TILE).filter((word) => word.length > 1)
+			
+			for (const word of col_words) {
+				if (word in WORD_LIST) {
+					board_words.push(`${word}: ${WORD_LIST[word]}`)
+				} else {
+					board_words.push(`⚠️ ${word} is not a valid word!`)
+				}
+			}
+		}
+
+		setBoardVerification(board_words)
+	}, [grid])
+
+	useEffect(() => {
 		function handleKeyDown(event: KeyboardEvent) {
 			const keyPressed = event.key.toUpperCase();
 			const [row, col] = selectedTile;
 
 			console.debug(`Key pressed: ${keyPressed}`);
 
+			if (row < 0 || col < 0) {
+				return
+			}
+
 			if (
-				row >= 0 &&
-				col >= 0 &&
 				IS_LETTER.test(keyPressed) &&
 				bench.includes(keyPressed)
 			) {
 				// Make copies to prevent undesired behavior
-				const newGrid = [...grid];
+				let newGrid = [...grid];
 				const newRow = [...newGrid[row]];
 				newRow[col] = keyPressed;
 				newGrid[row] = newRow;
-				setGrid(newGrid);
 
 				const newBench = [...bench];
 				const letter = grid[row][col];
@@ -87,6 +122,24 @@ export default function Game() {
 					newBench.splice(newBench.indexOf(keyPressed), 1);
 				}
 				setBench(newBench);
+
+				const newSelectedTile = [...selectedTile];
+				switch (editDirection) {
+					case Direction.Vertical:
+						newSelectedTile[0] += 1
+						if (row === grid.length - 1) {
+							newGrid = [...newGrid, Array(COLS).fill(EMPTY_TILE)];
+						}
+						break;
+					case Direction.Horizontal:
+						newSelectedTile[1] += 1
+						if (col === grid[0].length - 1) {
+							newGrid = newGrid.map((row) => [...row, EMPTY_TILE]);
+						}
+						break;
+				}
+				setSelectedTile(newSelectedTile)
+				setGrid(newGrid);
 			} else if (ARROW_KEYS.has(keyPressed)) {
 				const newSelectedTile = [...selectedTile];
 
@@ -115,15 +168,59 @@ export default function Game() {
 				) {
 					setSelectedTile(newSelectedTile);
 				}
-			} else if (DELETE_KEYS.has(keyPressed) && IS_LETTER.test(grid[row][col])) {
-				const newBench = [...bench, grid[row][col]]
-				setBench(newBench)
+			} else if (
+				DELETE_KEYS.has(keyPressed)
+			) {
+				let [deleteRow, deleteCol] = selectedTile
+				if (IS_LETTER.test(grid[row][col])) {
+					[deleteRow, deleteCol] = selectedTile
+				} else {
+					switch (editDirection) {
+						case Direction.Vertical:
+							deleteRow = row - 1
+							break;
+						case Direction.Horizontal:
+							deleteCol = col - 1
+							break;
+					}
+
+					if (!IS_LETTER.test(grid[deleteRow][deleteCol])) {
+						return
+					}
+				}
+				
+				const newBench = [...bench, grid[deleteRow][deleteCol]];
+				setBench(newBench);
 
 				const newGrid = [...grid];
-				const newRow = [...newGrid[row]];
-				newRow[col] = EMPTY_TILE;
-				newGrid[row] = newRow;
+				const newRow = [...newGrid[deleteRow]];
+				newRow[deleteCol] = EMPTY_TILE;
+				newGrid[deleteRow] = newRow;
 				setGrid(newGrid);
+
+				const newSelectedTile = [...selectedTile];
+				switch (editDirection) {
+					case Direction.Vertical:
+						newSelectedTile[0] -= 1
+						break;
+					case Direction.Horizontal:
+						newSelectedTile[1] -= 1
+						break;
+				}
+				setSelectedTile(newSelectedTile)
+			} else if (
+				keyPressed === " " 
+			) {
+				switch (editDirection) {
+					case Direction.Horizontal:
+						setEditDirection(Direction.Vertical)
+						break;
+					case Direction.Vertical:
+						setEditDirection(Direction.Horizontal)
+						break;
+					default:
+						break;
+				}
 			}
 		}
 
@@ -132,18 +229,17 @@ export default function Game() {
 		return () => {
 			document.removeEventListener("keydown", handleKeyDown);
 		};
-	}, [grid, bench, selectedTile]);
+	}, [grid, bench, selectedTile, editDirection]);
 
 	function Tile({ row, col, letter }: Props) {
 		const isSelected = selectedTile[0] === row && selectedTile[1] === col;
 		const hasLetter = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(letter);
 		const bg = isSelected ? "bg-yellow-400" : hasLetter ? "bg-yellow-100" : "";
 
-		// TODO: useRef to blue upon unselect
 		return (
 			<button
 				type="button"
-				className={`p-4 ${bg} text-amber-950 font-bold rounded-md text-4xl w-16 h-16`}
+				className={`p-4 ${bg} text-amber-950 font-bold rounded-md text-4xl w-16 h-16 z-10`}
 				onClick={() => setSelectedTile([row, col])}
 			>
 				{letter}
@@ -156,7 +252,10 @@ export default function Game() {
 			<div className="w-full place-items-center mb-10 text-center">
 				<div className="grid auto-cols-max grid-flow-col gap-2 mb-2">
 					{bench.map((letter, index) => (
-						<div key={index} className="p-4 bg-yellow-100 text-amber-950 font-bold rounded-md text-4xl w-16 h-16">
+						<div
+							key={index}
+							className="p-4 bg-yellow-100 text-amber-950 font-bold rounded-md text-4xl w-16 h-16"
+						>
 							{letter}
 						</div>
 					))}
@@ -164,17 +263,25 @@ export default function Game() {
 				<span className="font-bold">Bench</span>
 			</div>
 
-			<div className="w-full place-items-center mb-4">
-				<div>
-
-				<b>Use mouse to select tiles and keyboard to interact:</b>
-				<ul className="list-disc list-inside">
-					<li>Type letters to use letters from bench</li>
-					<li>Arrow keys to move selected tile</li>
-					<li>Backspace/delete to clear selected tile</li>
-					<li>WIP: Spacebar to control edit direction (horizontal/vertical)</li>
-					<li>WIP: Enter to peel/verify board words</li>
-				</ul>
+			<div className="w-full justify-center flex flex-row mb-4 gap-4 divide-slate-500 divide-x-2">
+				<div className="px-4">
+					<b>Use mouse to select tiles and keyboard to interact:</b>
+					<ul className="list-disc list-inside">
+						<li>Type letters to use letters from bench</li>
+						<li>Arrow keys to move selected tile</li>
+						<li>Backspace/delete to clear selected tile</li>
+						<li>
+							Spacebar to control edit direction (horizontal/vertical)
+						</li>
+						<li>WIP: Enter to peel!</li>
+					</ul>
+				</div>
+				<div className="px-4">
+					Board words:
+					<br />
+					<ul className="list-disc list-inside">
+						{board_verification.map((board_word) => <li key={board_word}>{board_word}</li>)}
+					</ul>
 				</div>
 			</div>
 
@@ -183,11 +290,19 @@ export default function Game() {
 					{grid.map((row, row_index) => (
 						<div
 							key={row_index}
-							className={`grid auto-cols-max grid-flow-col divide-x-3 divide-gray-500`}
-							// ${(selectedTile[0] === row_index && editDirection === Direction.Horizontal) && "bg-slate-500 bg-opacity-10"}
+							className={cn(
+								"grid auto-cols-max grid-flow-col divide-x-3 divide-gray-500",
+								selectedTile[0] === row_index &&
+									editDirection === Direction.Horizontal &&
+									"bg-neutral-700 opacity-90",
+							)}
 						>
 							{row.map((col, col_index) => (
-								<div key={`${row_index}_${col_index}`} className={``}>
+								<div key={`${row_index}_${col_index}`} className={cn(
+									selectedTile[1] === col_index &&
+									editDirection === Direction.Vertical &&
+									"bg-neutral-700 opacity-90",
+								)}>
 									<Tile row={row_index} col={col_index} letter={col} />
 								</div>
 							))}
