@@ -7,7 +7,7 @@ import WORD_LIST from "@/lib/NWL2023.json";
 // TODO: Sort bench when updated
 // TODO: Show tiles left in banana bag
 // TODO: Adjust grid dimensions
-// TODO: Fix bench to screen?
+// TODO: Apply fixed position to bench?
 
 const IS_LETTER = /^[a-zA-Z]+$/;
 const ARROW_KEYS = new Set(["ARROWLEFT", "ARROWRIGHT", "ARROWUP", "ARROWDOWN"]);
