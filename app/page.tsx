@@ -56,7 +56,7 @@ export default function Game() {
 	);
 
 	const [bench, setBench] = useState<string[]>([]);
-	const [selectedTile, setSelectedTile] = useState([-1, -1]);
+	const [selectedTile, setSelectedTile] = useState([3, 7]);
 	const [editDirection, setEditDirection] = useState(Direction.Horizontal);
 	const [board_verification, setBoardVerification] = useState<string[]>([]);
 
@@ -349,7 +349,7 @@ export default function Game() {
 				<div className="px-4">
 					<b>Use mouse to select tiles and keyboard to interact:</b>
 					<ul className="list-disc list-inside">
-						<li>Type letters to use letters from bench</li>
+						<li>Click or type letters to move tiles to/from the bench</li>
 						<li>Arrow keys to move selected tile</li>
 						<li>Backspace/delete to clear selected tile</li>
 						<li>Spacebar to control edit direction (horizontal/vertical)</li>
