@@ -130,7 +130,13 @@ export default function Game() {
 				newSelectedTile[1] < grid[0].length
 			) {
 				setSelectedTile(newSelectedTile);
-			}
+			} else if (newSelectedTile[0] < 0) {
+				const newGrid = [Array(grid[0].length).fill(EMPTY_TILE), ...grid]
+				setGrid(newGrid)
+				
+				newSelectedTile[0] += 1
+				setSelectedTile(newSelectedTile)
+			} // TODO: Add grid expansion for other cases
 		} else if (DELETE_KEYS.has(keyPressed)) {
 			let [deleteRow, deleteCol] = selectedTile;
 			if (IS_LETTER.test(grid[row][col])) {
@@ -261,7 +267,7 @@ export default function Game() {
 		return (
 			<button
 				type="button"
-				className={`p-4 ${bg} text-amber-950 font-bold rounded-md text-4xl w-16 h-16 z-10`}
+				className={`p-4 ${bg} text-amber-950 font-bold rounded-md text-2xl w-12 h-12 z-10`}
 				onClick={() => {
 					setSelectedTile([row, col]);
 					if (hasLetter) {
@@ -283,7 +289,7 @@ export default function Game() {
 
 	return (
 		<div>
-			<div className="w-full place-items-center mb-10 text-center">
+			<div className="w-full place-items-center mb-10 text-center mt-2">
 				<div className="grid auto-cols-max grid-flow-col gap-2 mb-2">
 					{bench.map((letter, index) => (
 						<div
@@ -333,7 +339,7 @@ export default function Game() {
 							),
 						);
 					}}
-					className="bg-amber-300 text-black mx-4 rounded-sm py-1 px-2"
+					className="bg-amber-300 text-black mx-4 rounded-sm py-1 px-2 font-bold"
 				>
 					Reset bench
 				</button>
