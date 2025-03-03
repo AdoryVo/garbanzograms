@@ -136,7 +136,23 @@ export default function Game() {
 
 				newSelectedTile[0] += 1;
 				setSelectedTile(newSelectedTile);
-			} // TODO: Add grid expansion for other cases
+			} else if (newSelectedTile[0] >= grid.length) {
+				const newGrid = [...grid, Array(grid[0].length).fill(EMPTY_TILE)];
+				setGrid(newGrid);
+
+				setSelectedTile(newSelectedTile);
+			} else if (newSelectedTile[1] < 0) {
+				const newGrid = grid.map((row) => [EMPTY_TILE, ...row]);
+				setGrid(newGrid);
+
+				newSelectedTile[1] += 1;
+				setSelectedTile(newSelectedTile);
+			} else if (newSelectedTile[1] >= grid[0].length) {
+				const newGrid = grid.map((row) => [...row, EMPTY_TILE]);
+				setGrid(newGrid);
+
+				setSelectedTile(newSelectedTile);
+			}
 		} else if (DELETE_KEYS.has(keyPressed)) {
 			let [deleteRow, deleteCol] = selectedTile;
 			if (IS_LETTER.test(grid[row][col])) {
@@ -360,6 +376,9 @@ export default function Game() {
 					<ul className="list-disc list-inside">
 						<li>Click or type letters to move tiles to/from the bench</li>
 						<li>Arrow keys to move selected tile</li>
+						<ul className="list-disc list-inside ml-8">
+							<li>Move towards edges to expand the grid</li>
+						</ul>
 						<li>Backspace/delete to clear selected tile</li>
 						<li>Spacebar to control edit direction (horizontal/vertical)</li>
 						<li>Enter to peel when your board is complete!</li>
