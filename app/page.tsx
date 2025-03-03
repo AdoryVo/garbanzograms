@@ -295,6 +295,13 @@ export default function Game() {
 							onKeyDown={() =>
 								handleKeyDown(new KeyboardEvent("keydown", { key: letter }))
 							}
+							onContextMenu={(event) => {
+								const newBench = [...bench, ...LETTER_POOL.toSorted(() => 0.5 - Math.random()).slice(0, 3)]
+								newBench.splice(newBench.indexOf(letter), 1);
+								setBench(newBench)
+								
+								event.preventDefault()
+							}}
 						>
 							{letter}
 						</div>
@@ -341,7 +348,7 @@ export default function Game() {
 						<li>Backspace/delete to clear selected tile</li>
 						<li>Spacebar to control edit direction (horizontal/vertical)</li>
 						<li>Enter to peel when your board is complete!</li>
-						<li>WIP: Right click to exchange tile</li>
+						<li>Right click a tile on your bench to exchange for 3 new tiles</li>
 						<li>WIP: Hold shift to allow selecting multiple letters</li>
 						<li>WIP: Hold alt to allow moving multiple letters</li>
 						<li>WIP: Hold ctrl to swap tiles</li>
