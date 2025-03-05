@@ -35,7 +35,7 @@ const LETTER_DISTRIBUTION = {
 	18: "E",
 };
 const LETTER_POOL = Object.keys(LETTER_DISTRIBUTION).flatMap((count) => {
-	const intCount: keyof typeof LETTER_DISTRIBUTION = Number.parseInt(count);
+	const intCount = Number.parseInt(count) as keyof typeof LETTER_DISTRIBUTION;
 	let letters: string[] = [];
 	for (const char of LETTER_DISTRIBUTION[intCount]) {
 		letters = letters.concat(Array(intCount).fill(char));
@@ -247,7 +247,9 @@ export default function Game() {
 
 			for (const word of row_words) {
 				if (word in WORD_LIST) {
-					board_words.push(`${word}: ${WORD_LIST[word]}`);
+					board_words.push(
+						`${word}: ${WORD_LIST[word as keyof typeof WORD_LIST]}`,
+					);
 				} else {
 					board_words.push(`⚠️ ${word} is not a valid word!`);
 				}
@@ -263,7 +265,9 @@ export default function Game() {
 
 			for (const word of col_words) {
 				if (word in WORD_LIST) {
-					board_words.push(`${word}: ${WORD_LIST[word]}`);
+					board_words.push(
+						`${word}: ${WORD_LIST[word as keyof typeof WORD_LIST]}`,
+					);
 				} else {
 					board_words.push(`⚠️ ${word} is not a valid word!`);
 				}
@@ -411,7 +415,9 @@ export default function Game() {
 						type="button"
 						className="bg-red-500 p-2 font-bold rounded-md my-2"
 						onClick={() => {
-							const gridLetters = grid.flat().filter((letter) => letter !== EMPTY_TILE);
+							const gridLetters = grid
+								.flat()
+								.filter((letter) => letter !== EMPTY_TILE);
 							setBench([...bench, ...gridLetters]);
 
 							setGrid(grid.map((row) => Array(row.length).fill(EMPTY_TILE)));
