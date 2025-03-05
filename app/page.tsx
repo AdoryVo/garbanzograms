@@ -64,6 +64,8 @@ export default function Game() {
 	const [editDirection, setEditDirection] = useState(Direction.Horizontal);
 	const [boardWords, setBoardWords] = useState<string[]>([]);
 
+	const [isControlsHidden, setIsControlsHidden] = useState(false);
+
 	function handleKeyDown(event: KeyboardEvent) {
 		const keyPressed = event.key.toUpperCase();
 		const [row, col] = selectedTile;
@@ -288,7 +290,7 @@ export default function Game() {
 			<button
 				type="button"
 				className={cn(
-					"p-4 text-amber-950 font-bold rounded-md text-2xl w-12 h-12 z-10",
+					"text-amber-950 font-bold rounded-md text-3xl w-full h-full z-10",
 					bg,
 				)}
 				onClick={() => {
@@ -317,7 +319,7 @@ export default function Game() {
 					{bench.map((letter, index) => (
 						<div
 							key={index}
-							className="p-4 bg-yellow-100 text-amber-950 font-bold rounded-md text-4xl w-16 h-16"
+							className="bg-yellow-100 text-amber-950 font-bold rounded-md text-4xl w-16 h-16 flex justify-center items-center"
 							onClick={() =>
 								handleKeyDown(new KeyboardEvent("keydown", { key: letter }))
 							}
@@ -374,10 +376,15 @@ export default function Game() {
 				</button>
 			</div>
 
-			<div className="w-full justify-center flex flex-row mb-4 gap-4 divide-slate-500 divide-x-2">
+			<div className="bg-black/[0.5] z-50 my-4 gap-4 fixed top-1/6 left-0">
 				<div className="px-4">
-					<b>Use mouse to select tiles and keyboard to interact:</b>
-					<ul className="list-disc list-inside">
+					<ul
+						className={cn(
+							"list-disc list-inside",
+							isControlsHidden ? "hidden" : "",
+						)}
+					>
+						<b>Use mouse to select tiles and keyboard to interact:</b>
 						<li>Click or type letters to move tiles to/from the bench</li>
 						<li>Arrow keys to move selected tile</li>
 						<ul className="list-disc list-inside ml-8">
@@ -393,19 +400,37 @@ export default function Game() {
 						<li>WIP: Hold alt to allow moving multiple letters</li>
 						<li>WIP: Hold ctrl to swap tiles</li>
 					</ul>
-				</div>
-				<div className="px-4">
-					<b>Board words (from NASPA Word List 2023):</b>
-					<br />
-					<ul className="list-disc list-inside">
-						{boardWords.map((board_word) => (
-							<li key={board_word}>{board_word}</li>
-						))}
-						{boardWords.length === 0 && "Fill the board with some words!"}
-					</ul>
+					<button
+						type="button"
+						className="bg-purple-500 p-2 font-bold rounded-md me-2"
+						onClick={() => setIsControlsHidden(!isControlsHidden)}
+					>
+						{isControlsHidden ? "↓ Show" : "↑ Hide"} controls
+					</button>
+					<button
+						type="button"
+						className="bg-red-500 p-2 font-bold rounded-md my-2"
+						onClick={() => {
+							const gridLetters = grid.flat().filter((letter) => letter !== EMPTY_TILE);
+							setBench([...bench, ...gridLetters]);
+
+							setGrid(grid.map((row) => Array(row.length).fill(EMPTY_TILE)));
+						}}
+					>
+						Clear grid
+					</button>
 				</div>
 			</div>
-
+			<div className="bg-black/[0.5] px-4 z-50 my-4 gap-4 fixed top-1/6 right-0">
+				<b>Board words (from NASPA Word List 2023):</b>
+				<br />
+				<ul className="list-disc list-inside">
+					{boardWords.map((board_word) => (
+						<li key={board_word}>{board_word}</li>
+					))}
+					{boardWords.length === 0 && "Fill the board with some words!"}
+				</ul>
+			</div>
 			<div className="w-full place-items-center">
 				<div className="grid auto-rows-max grid-flow-row divide-y-3 divide-gray-500">
 					{grid.map((row, row_index) => (
@@ -425,6 +450,7 @@ export default function Game() {
 										selectedTile[1] === col_index &&
 											editDirection === Direction.Vertical &&
 											"bg-neutral-700 opacity-90",
+										"w-14 h-14",
 									)}
 								>
 									<Tile row={row_index} col={col_index} letter={col} />
