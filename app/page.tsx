@@ -8,6 +8,10 @@ import WORD_LIST from "@/lib/NWL2023.json";
 // TODO: Show tiles left in banana bag
 // TODO: Adjust grid dimensions
 // TODO: Apply fixed position to bench?
+// TODO: Add memoization and re-render optimization
+// TODO: Duplicate word -> multiple definitions
+// TODO: Balance bench consonants vs vowels
+// TODO: When entering word, skip letter if encounter existing letter
 
 const IS_LETTER = /^[a-zA-Z]+$/;
 const ARROW_KEYS = new Set(["ARROWLEFT", "ARROWRIGHT", "ARROWUP", "ARROWDOWN"]);
