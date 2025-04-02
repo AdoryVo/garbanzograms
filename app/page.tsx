@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import WORD_LIST from "@/lib/NWL2023.json";
 
-// TODO: Sort bench when updated
 // TODO: Show tiles left in banana bag
 // TODO: Adjust grid dimensions
 // TODO: Apply fixed position to bench?
@@ -66,6 +65,10 @@ export default function Game() {
 
 	const [isControlsHidden, setIsControlsHidden] = useState(false);
 
+	function updateBench(newBench: string[]) {
+		setBench(newBench.toSorted());
+	}
+
 	function handleKeyDown(event: KeyboardEvent) {
 		const keyPressed = event.key.toUpperCase();
 		const [row, col] = selectedTile;
@@ -90,7 +93,7 @@ export default function Game() {
 			} else {
 				newBench.splice(newBench.indexOf(keyPressed), 1);
 			}
-			setBench(newBench);
+			updateBench(newBench);
 
 			const newSelectedTile = [...selectedTile];
 			switch (editDirection) {
@@ -180,7 +183,7 @@ export default function Game() {
 				IS_LETTER.test(grid[deleteRow][deleteCol])
 			) {
 				const newBench = [...bench, grid[deleteRow][deleteCol]];
-				setBench(newBench);
+				updateBench(newBench);
 
 				const newGrid = [...grid];
 				const newRow = [...newGrid[deleteRow]];
@@ -222,13 +225,15 @@ export default function Game() {
 				bench.length === 0 &&
 				boardWords.every((word) => !word.startsWith("⚠️"))
 			) {
-				setBench(LETTER_POOL.toSorted(() => 0.5 - Math.random()).slice(0, 1));
+				updateBench(
+					LETTER_POOL.toSorted(() => 0.5 - Math.random()).slice(0, 1),
+				);
 			}
 		}
 	}
 
 	useEffect(() => {
-		setBench(
+		updateBench(
 			LETTER_POOL.toSorted(() => 0.5 - Math.random()).slice(0, BENCH_SIZE),
 		);
 
@@ -307,7 +312,7 @@ export default function Game() {
 						setGrid(newGrid);
 
 						const newBench = [...bench, letter];
-						setBench(newBench);
+						updateBench(newBench);
 					}
 				}}
 			>
@@ -339,7 +344,7 @@ export default function Game() {
 									),
 								];
 								newBench.splice(newBench.indexOf(letter), 1);
-								setBench(newBench);
+								updateBench(newBench);
 
 								event.preventDefault();
 							}}
@@ -353,7 +358,7 @@ export default function Game() {
 							<button
 								type="button"
 								onClick={() =>
-									setBench(
+									updateBench(
 										LETTER_POOL.toSorted(() => 0.5 - Math.random()).slice(0, 1),
 									)
 								}
@@ -367,7 +372,7 @@ export default function Game() {
 				<button
 					type="button"
 					onClick={() => {
-						setBench(
+						updateBench(
 							LETTER_POOL.toSorted(() => 0.5 - Math.random()).slice(
 								0,
 								BENCH_SIZE,
@@ -418,7 +423,7 @@ export default function Game() {
 							const gridLetters = grid
 								.flat()
 								.filter((letter) => letter !== EMPTY_TILE);
-							setBench([...bench, ...gridLetters]);
+							updateBench([...bench, ...gridLetters]);
 
 							setGrid(grid.map((row) => Array(row.length).fill(EMPTY_TILE)));
 						}}
