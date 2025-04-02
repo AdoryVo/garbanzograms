@@ -8,7 +8,6 @@ import WORD_LIST from "@/lib/NWL2023.json";
 // TODO: Adjust grid dimensions
 // TODO: Apply fixed position to bench?
 // TODO: Add memoization and re-render optimization
-// TODO: Duplicate word -> multiple definitions
 // TODO: Balance bench consonants vs vowels
 // TODO: When entering word, skip letter if encounter existing letter
 
@@ -243,7 +242,7 @@ export default function Game() {
 	}, []);
 
 	useEffect(() => {
-		const board_words = [];
+		const board_words = new Set<string>();
 		for (const row of grid) {
 			const row_string = row.join("");
 			const row_words = row_string
@@ -252,11 +251,11 @@ export default function Game() {
 
 			for (const word of row_words) {
 				if (word in WORD_LIST) {
-					board_words.push(
+					board_words.add(
 						`${word}: ${WORD_LIST[word as keyof typeof WORD_LIST]}`,
 					);
 				} else {
-					board_words.push(`⚠️ ${word} is not a valid word!`);
+					board_words.add(`⚠️ ${word} is not a valid word!`);
 				}
 			}
 		}
@@ -270,16 +269,16 @@ export default function Game() {
 
 			for (const word of col_words) {
 				if (word in WORD_LIST) {
-					board_words.push(
+					board_words.add(
 						`${word}: ${WORD_LIST[word as keyof typeof WORD_LIST]}`,
 					);
 				} else {
-					board_words.push(`⚠️ ${word} is not a valid word!`);
+					board_words.add(`⚠️ ${word} is not a valid word!`);
 				}
 			}
 		}
 
-		setBoardWords(board_words);
+		setBoardWords(Array.from(board_words));
 	}, [grid]);
 
 	useEffect(() => {
